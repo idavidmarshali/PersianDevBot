@@ -1,0 +1,33 @@
+{
+  "Bot": {
+    "SUPER_SV_ID": 788905180312895498,
+    "SUPER_USER_ID": 393073095956496384
+  },
+  "DataBase": {
+    "AutoThreading": {
+      "INIT": false,
+      "SRC" : "data/autothreading.db"
+    },
+    "Reports": {
+      "INIT": true,
+      "SRC": ":memory:"
+    }
+  },
+  "KeepAlive": {
+    "HOST": "0.0.0.0",
+    "PORT": 8080
+  },
+  "Features": {
+    "AUTO_THREADING": true,
+    "CUSTOM_QUESTIONS": true,
+    "ERROR_HANDLER": true,
+    "REPORTS": true,
+    "MISC": true
+  },
+  "Extensions": [
+    "extensions.auto_threading",
+    "extensions.report",
+    "extensions.error_handler",
+    "extensions.misc"
+  ]
+}
