@@ -1,12 +1,11 @@
-import logging
 import sys
-
 import discord
+from typing import overload
 from discord import app_commands
 from discord.ext import commands
-from utils.logger import Logger
-from typing import overload
-from bot import PDBot
+from persiandevbot.utils.logger import Logger
+
+from ..bot import PDBot
 
 
 # TODO:

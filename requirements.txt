@@ -1,4 +1,0 @@
-aiosqlite~=0.17.0
-Flask~=2.2.2
-aiohttp~=3.7.4.post0
-discord.py~=2.0.1

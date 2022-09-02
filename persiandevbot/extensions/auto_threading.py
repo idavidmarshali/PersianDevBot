@@ -1,14 +1,13 @@
-import logging
-import typing
-
-import discord
+from typing import List, Union, Literal, Optional
 from discord.ext import commands
+import discord
+
 
 from typing import overload
-from bot import PDBot
-from utils.logger import Logger
-from utils.database import DatabaseHandler
-from extensions.error_handler import ErrorHandler
+from persiandevbot.bot import PDBot
+from persiandevbot.utils.logger import Logger
+from persiandevbot.utils.database import DatabaseHandler
+from persiandevbot.extensions.error_handler import ErrorHandler
 
 # TODO:
 #   - Refactor the code if needed
@@ -27,7 +26,7 @@ class _AutoThreadingChannel:
 
 class _AutoThreadingCache:
     def __init__(self):
-        self.__channels: list[_AutoThreadingChannel] = []
+        self.__channels: List[_AutoThreadingChannel] = []
 
     def __contains__(self, item):
         __channel_id: int = item
@@ -47,11 +46,11 @@ class _AutoThreadingCache:
         self.__channels.append(_AutoThreadingChannel(channel, creation_text))
 
     @overload
-    def get(self, _id: int) -> _AutoThreadingChannel | None:
+    def get(self, _id: int) -> Union[_AutoThreadingChannel, None]:
         ...
 
     @overload
-    def get(self, channel: discord.TextChannel) -> _AutoThreadingChannel | None:
+    def get(self, channel: discord.TextChannel) -> Union[_AutoThreadingChannel, None]:
         ...
 
     def get(self, x):
@@ -80,7 +79,6 @@ class _AutoThreadingCache:
 
 
 class _AutoThreadingView(discord.ui.View):
-
     def __init__(self, persistent: bool = True, *, timeout: float = 180.0):
         super().__init__(timeout=None if persistent else timeout)
 
@@ -200,8 +198,8 @@ class AutoThreading(commands.Cog):
                                    channel="the channel to take action on. if not given, current channel will be used!")
     @discord.app_commands.guild_only()
     async def ATCommand(self, interaction: discord.Interaction,
-                        action: typing.Literal["Enable", "Disable", "Change Creation Text", "Info"],
-                        channel: typing.Optional[discord.TextChannel]):
+                        action: Literal["Enable", "Disable", "Change Creation Text", "Info"],
+                        channel: Optional[discord.TextChannel]):
         if channel is None:
             channel = interaction.channel
         if action == "Enable":

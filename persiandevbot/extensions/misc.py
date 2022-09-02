@@ -1,10 +1,9 @@
-import logging
-
 import discord
 from discord.ext import commands
-from utils.logger import Logger
-from extensions.error_handler import ErrorHandler
-from bot import PDBot
+
+from .error_handler import ErrorHandler
+from ..utils.logger import Logger
+from ..bot import PDBot
 
 
 class Misc(commands.Cog):

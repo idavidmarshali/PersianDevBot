@@ -1,9 +1,9 @@
-import logging
 import os
 import json
-import pathlib
+import logging
+from typing import Union
 
-from utils.logger import Logger
+from .logger import Logger
 
 
 class ConfigLoader:
@@ -25,7 +25,7 @@ class ConfigLoader:
             return cls.__instance
         return super(cls.__class__, cls).__new__(cls)
 
-    def __init__(self, path: os.PathLike | str = None):
+    def __init__(self, path: Union[os.PathLike, str] = None):
         if ConfigLoader.__instance is not None and path is None:
             return
         self.__path = path
@@ -42,8 +42,12 @@ class ConfigLoader:
                 self.__setattr__(str(root), container)
             else:
                 self.__setattr__(str(root), self.__data[root])
-        self.__setattr__("DISCORD_API_SECRET", os.environ["DISCORD_API_SECRET"])
-        self.__setattr__("REPORT_WEBHOOK_URL", os.environ["REPORT_WEBHOOK_URL"])
+        try:
+            self.__setattr__("DISCORD_API_SECRET", os.environ["DISCORD_API_SECRET"])
+            self.__setattr__("REPORT_WEBHOOK_URL", os.environ["REPORT_WEBHOOK_URL"])
+        except KeyError as e:
+            self.__logger.error(f"Failed to load {e} from OS Environment Variables!")
+            exit(1)
         self.__logger.info("Loaded token from environ!")
 
     def update(self, new_data: dict):

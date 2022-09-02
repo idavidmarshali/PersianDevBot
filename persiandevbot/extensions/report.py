@@ -1,16 +1,13 @@
-import csv
 import io
-import logging
 import time
-import typing
-
 import aiohttp
 import discord
 from discord.ext import commands
-from utils.database import DatabaseHandler
-from extensions.error_handler import ErrorHandler
-from utils.logger import Logger
-from bot import PDBot
+
+from ..utils.database import DatabaseHandler
+from ..utils.logger import Logger
+from .error_handler import ErrorHandler
+from ..bot import PDBot
 
 
 class _ReportModal(discord.ui.Modal, title="Report Page"):

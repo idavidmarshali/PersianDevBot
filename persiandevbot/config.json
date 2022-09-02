@@ -6,7 +6,7 @@
   "DataBase": {
     "AutoThreading": {
       "INIT": false,
-      "SRC" : "data/autothreading.db"
+      "SRC" : "autothreading.db"
     },
     "Reports": {
       "INIT": true,
@@ -25,7 +25,7 @@
     "MISC": true
   },
   "Extensions": [
-    "extensions.auto_threading",
+    "persiandevbot.extensions.auto_threading",
     "extensions.report",
     "extensions.error_handler",
     "extensions.misc"

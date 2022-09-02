@@ -1,7 +1,9 @@
-from flask import Flask, Response
 import socket
+from flask import Flask, Response
 from socket import socket as Socket
-from utils.logger import Logger
+
+from .logger import Logger
+
 
 
 class SocketKeepAlive:

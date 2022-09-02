@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
-from utils.logger import Logger
-from utils.config import ConfigLoader
-from utils.database import DatabaseHandler
+from .utils.logger import Logger
+from .utils.config import ConfigLoader
+
 
 
 class PDBot(commands.Bot):

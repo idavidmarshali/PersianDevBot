@@ -1,0 +1,36 @@
+[build-system]
+requires      = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name        = "PersianDevBot"
+description = "a discord bot for persian developers server"
+version     = "0.0.1"
+requires-python = ">=3.10"
+dependencies    = [
+    "flask~=2.2.2",
+    "aiosqlite~=0.17.0",
+    "aiohttp~=3.7.4.post0",
+    "discord.py~=2.0.1"
+]
+authors = [{ name="David Marshal"}]
+readme  = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3.10 :: Only",
+    "Development Status :: 2 - Pre-Alpha",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers"
+]
+[project.urls]
+"Homepage"       = "https://github.com/idavidmarshali/PersianDevBot"
+"Discord Server" = "https://discord.gg/WPeRxyJjBB"
+
+[tool.pyright]
+include = [
+    "persiandevbot",
+    "persiandevbot/extensions",
+    "persiandevbot/utils"
+]
+reportUnusedImport = "error"
+pythonVersion      = "3.10"
+typeCheckingMode   = "basic"

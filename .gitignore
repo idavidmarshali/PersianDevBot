@@ -212,6 +212,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-testing/
-data/*.db
-extensions/extension_manager.py
+src/testing
+*.db
+src/extensions/extension_manager.py
