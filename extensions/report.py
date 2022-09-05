@@ -1,13 +1,14 @@
-import csv
-import io
-import logging
-import time
-import typing
 
+import io
+import time
 import aiohttp
+import replit
+
 import discord
 from discord.ext import commands
-from utils.database import DatabaseHandler
+
+# from utils.database import SqlDatabaseHandler as DatabaseHandler
+
 from extensions.error_handler import ErrorHandler
 from utils.logger import Logger
 from bot import PDBot
@@ -40,35 +41,38 @@ class Report(commands.Cog):
         self.__bot = bot
         self.__logger = Logger("PDBot.Report")
         self.__webhookUrl: str = bot.config.REPORT_WEBHOOK_URL
-        self.__dataBase: DatabaseHandler = None
+        # self.__dataBase: DatabaseHandler = None
         self.__reportMenu: discord.app_commands.ContextMenu = None
         self.__lastReportId: int = 0
 
     async def cog_load(self) -> None:
-        self.__dataBase = DatabaseHandler(self.__bot.config.DataBase.Reports['SRC'])
-        await self.__dataBase.init()
-        if self.__bot.config.DataBase.Reports['INIT']:
-            await self.__dataBase.cursor.execute("""
-                    CREATE TABLE Reports (
-                            USER_ID         INT  NOT NULL,
-                            USER_NAME       TEXT NOT NULL,
-                            REPORT_TOPIC    TEXT NOT NULL,
-                            REPORT_TEXT     TEXT NOT NULL,
-                            REPORT_ID       INT  NOT NULL,
-                            REPORTED_MESSAGE_ID       INT,
-                            REPORTED_MESSAGE_USER_ID  INT,
-                            REPORTED_MESSAGE_TEXT    TEXT)""")
-            await self.__dataBase.connection.commit()
-            self.__logger.info("Inited Database and created needed tables!")
+        # self.__dataBase = DatabaseHandler(self.__bot.config.DataBase.Reports['SRC'])
+        # await self.__dataBase.init()
+        # if self.__bot.config.DataBase.Reports['INIT']:
+        #     await self.__dataBase.cursor.execute("""
+        #             CREATE TABLE Reports (
+        #                     USER_ID         INT  NOT NULL,
+        #                     USER_NAME       TEXT NOT NULL,
+        #                     REPORT_TOPIC    TEXT NOT NULL,
+        #                     REPORT_TEXT     TEXT NOT NULL,
+        #                     REPORT_ID       INT  NOT NULL,
+        #                     REPORTED_MESSAGE_ID       INT,
+        #                     REPORTED_MESSAGE_USER_ID  INT,
+        #                     REPORTED_MESSAGE_TEXT    TEXT)""")
+        #     await self.__dataBase.connection.commit()
+        #      self.__logger.info("Inited Database and created needed tables!")
+        #
+        #     # !! Database is currently on :memory:, if you change that, you need to uncomment this part
+        #     # new_data = self.__bot.config.data
+        #     # new_data['DataBase']['Reports']['INIT'] = False
+        #     # self.__bot.config.update(new_data)
+        #
+        # else:
+        #     await self.__dataBase.cursor.execute("SELECT REPORT_ID FROM Reports ORDER BY REPORT_ID DESC")
+        #     self.__lastReportId = (await self.__dataBase.cursor.fetchone())[0]
 
-            # !! Database is currently on :memory:, if you change that, you need to uncomment this part
-            # new_data = self.__bot.config.data
-            # new_data['DataBase']['Reports']['INIT'] = False
-            # self.__bot.config.update(new_data)
-
-        else:
-            await self.__dataBase.cursor.execute("SELECT REPORT_ID FROM Reports ORDER BY REPORT_ID DESC")
-            self.__lastReportId = (await self.__dataBase.cursor.fetchone())[0]
+        if "Reports" not in replit.db.keys():
+            replit.db["Reports"] = {}
 
         self.__reportMenu = discord.app_commands.ContextMenu(
             name="Report Message",
@@ -80,7 +84,7 @@ class Report(commands.Cog):
         self.__logger.info("Extension Loaded!")
 
     async def cog_unload(self) -> None:
-        await self.__dataBase.kill()
+        # await self.__dataBase.kill()
         self.__bot.tree.remove_command(self.__reportMenu.name, type=self.__reportMenu.type)
         self.__logger.info("Extension Unloaded! Database connection closed.")
 
@@ -104,20 +108,27 @@ class Report(commands.Cog):
                                   description="Send a report to moderators")
     @discord.app_commands.guild_only()
     async def report(self, interaction: discord.Interaction):
-        self.__lastReportId += 1
         _rtModal = _ReportModal()
         await interaction.response.send_modal(_rtModal)
         await _rtModal.wait()
         if _rtModal.timedOut:
             return await ErrorHandler.SendError(interaction, "Report Form Timeout", followup=True)
-
+        self.__lastReportId += 1
         await self.__SendReportToWebhook(interaction.user, self.__lastReportId, _rtModal.topic.value,
                                          _rtModal.reportMessage.value)
-        await self.__dataBase.cursor.execute("INSERT INTO Reports (USER_ID, USER_NAME, REPORT_TOPIC, REPORT_TEXT,"
-                                             " REPORT_ID) VALUES (?, ?, ?, ?, ?)",
-                                             (interaction.user.id, interaction.user.name, _rtModal.topic.value,
-                                              _rtModal.reportMessage.value, self.__lastReportId))
-        await self.__dataBase.connection.commit()
+        replit.db["Reports"][self.__lastReportId] = {"USER_ID": interaction.user.id, "USER_NAME": interaction.user.name,
+                                                     "REPORT_TOPIC": _rtModal.topic.value, "REPORT_TEXT": _rtModal.reportMessage.value}
+        replit.db["Reports"][self.__lastReportId] = {"USER_ID": interaction.user.id, "USER_NAME": interaction.user.name,
+                                                     "REPORT_TOPIC": _rtModal.topic.value,
+                                                     "REPORT_TEXT": _rtModal.reportMessage.value,
+                                                     "REPORTED_MESSAGE_ID": None,
+                                                     "REPORTED_MESSAGE_USER_ID": None,
+                                                     "REPORTED_MESSAGE_TEXT": None}
+        # await self.__dataBase.cursor.execute("INSERT INTO Reports (USER_ID, USER_NAME, REPORT_TOPIC, REPORT_TEXT,"
+        #                                      " REPORT_ID) VALUES (?, ?, ?, ?, ?)",
+        #                                      (interaction.user.id, interaction.user.name, _rtModal.topic.value,
+        #                                       _rtModal.reportMessage.value, self.__lastReportId))
+        # await self.__dataBase.connection.commit()
         return
 
     @discord.app_commands.guild_only()
@@ -131,22 +142,34 @@ class Report(commands.Cog):
 
         await self.__SendReportToWebhook(interaction.user, self.__lastReportId, _rtModal.topic.value,
                                          _rtModal.reportMessage.value, message)
-        await self.__dataBase.cursor.execute("INSERT INTO Reports (USER_ID, USER_NAME, REPORT_TOPIC, REPORT_TEXT,"
-                                             " REPORT_ID, REPORTED_MESSAGE_ID, REPORTED_MESSAGE_USER_ID,"
-                                             " REPORTED_MESSAGE_TEXT) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                                             (interaction.user.id, interaction.user.name, _rtModal.topic.value,
-                                              _rtModal.reportMessage.value, self.__lastReportId, message.id,
-                                              message.author.id, message.content))
-        await self.__dataBase.connection.commit()
+        replit.db["Reports"][self.__lastReportId] = {"USER_ID": interaction.user.id, "USER_NAME": interaction.user.name,
+                                                     "REPORT_TOPIC": _rtModal.topic.value,
+                                                     "REPORT_TEXT": _rtModal.reportMessage.value,
+                                                     "REPORTED_MESSAGE_ID": message.id,
+                                                     "REPORTED_MESSAGE_USER_ID": message.author.id,
+                                                     "REPORTED_MESSAGE_TEXT": message.content}
+        # await self.__dataBase.cursor.execute("INSERT INTO Reports (USER_ID, USER_NAME, REPORT_TOPIC, REPORT_TEXT,"
+        #                                      " REPORT_ID, REPORTED_MESSAGE_ID, REPORTED_MESSAGE_USER_ID,"
+        #                                      " REPORTED_MESSAGE_TEXT) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        #                                      (interaction.user.id, interaction.user.name, _rtModal.topic.value,
+        #                                       _rtModal.reportMessage.value, self.__lastReportId, message.id,
+        #                                       message.author.id, message.content))
+        # await self.__dataBase.connection.commit()
         return
 
     @commands.command()
     @commands.is_owner()
     async def get_reports_csv(self, ctx: commands.Context):
-        await self.__dataBase.cursor.execute(
-            "SELECT REPORT_ID,USER_ID,USER_NAME,REPORT_TOPIC,REPORT_TEXT,REPORTED_MESSAGE_ID,"
-            "REPORTED_MESSAGE_USER_ID,REPORTED_MESSAGE_TEXT FROM Reports")
-        all_reports = await self.__dataBase.cursor.fetchall()
+        # await self.__dataBase.cursor.execute(
+        #     "SELECT REPORT_ID,USER_ID,USER_NAME,REPORT_TOPIC,REPORT_TEXT,REPORTED_MESSAGE_ID,"
+        #     "REPORTED_MESSAGE_USER_ID,REPORTED_MESSAGE_TEXT FROM Reports")
+        # all_reports = await self.__dataBase.cursor.fetchall()
+        all_reports: list = []
+        for key, val in replit.db["Reports"].items():
+            _report = list(val.values())
+            _report.insert(0, key)
+            all_reports.append(_report)
+
         # Opening a memory stream to write csv data and send it
         with io.BytesIO() as memoryOut:
             memoryOut.write(b"REPORT_ID,USER_ID,USER_NAME,REPORT_TOPIC,REPORT_TEXT,REPORTED_MESSAGE_ID,"

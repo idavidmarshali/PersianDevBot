@@ -1,11 +1,11 @@
 import multiprocessing
 import os
+
 import discord
 from discord.ext import commands
 from bot import PDBot
 from utils.keep_alive import SocketKeepAlive as KeepAlive
 from utils.config import ConfigLoader
-
 
 def BotRunner():
     config = ConfigLoader("config.json")
@@ -25,6 +25,7 @@ def KaRunner():
 
 
 if __name__ == "__main__":
+    ConfigLoader("config.json") # load initial config
     botProcess = multiprocessing.Process(target=BotRunner)
     kaProcess = multiprocessing.Process(target=KaRunner)
     botProcess.start()

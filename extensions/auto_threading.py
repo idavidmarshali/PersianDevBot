@@ -1,14 +1,18 @@
-import logging
+import replit
 import typing
+from typing import overload
 
 import discord
 from discord.ext import commands
 
-from typing import overload
+
 from bot import PDBot
 from utils.logger import Logger
-from utils.database import DatabaseHandler
 from extensions.error_handler import ErrorHandler
+
+# from utils.database import SqlDatabaseHandler as DatabaseHandler
+
+
 
 # TODO:
 #   - Refactor the code if needed
@@ -138,29 +142,40 @@ class AutoThreading(commands.Cog):
 
     def __init__(self, bot: PDBot):
         self.__bot: PDBot = bot
-        self.__dataBase: DatabaseHandler = None
+        # self.__dataBase: DatabaseHandler = None
         self.__cache: _AutoThreadingCache = _AutoThreadingCache()
         self.__logger = Logger("PDBot.AutoThreading")
 
     async def cog_load(self) -> None:
-        self.__dataBase = DatabaseHandler(self.__bot.config.DataBase.AutoThreading['SRC'])
-        await self.__dataBase.init()
-        if self.__bot.config.DataBase.AutoThreading['INIT']:
-            await self.__dataBase.cursor.execute("CREATE TABLE Channels ("
-                                                 "CHANNEL_ID INT NOT NULL,"
-                                                 " CREATION_TEXT TEXT DEFAULT '')")
-            await self.__dataBase.connection.commit()
-            self.__logger.info("Inited Database and created needed tables!")
-            new_data = self.__bot.config.data
-            new_data['DataBase']['AutoThreading']['INIT'] = False
-            self.__bot.config.update(new_data)
+        # self.__dataBase = DatabaseHandler(self.__bot.config.DataBase.AutoThreading['SRC'])
+        # await self.__dataBase.init()
+        # if self.__bot.config.DataBase.AutoThreading['INIT']:
+        #     await self.__dataBase.cursor.execute("CREATE TABLE Channels ("
+        #                                          "CHANNEL_ID INT NOT NULL,"
+        #                                          " CREATION_TEXT TEXT DEFAULT '')")
+        #     await self.__dataBase.connection.commit()
+        #     self.__logger.info("Inited Database and created needed tables!")
+        #     new_data = self.__bot.config.data
+        #     new_data['DataBase']['AutoThreading']['INIT'] = False
+        #     self.__bot.config.update(new_data)
+
         self.__bot.add_view(_AutoThreadingView())
-        await self.__loadChannels()
+
+        if "AutoThreading" not in replit.db.keys():
+            replit.db["AutoThreading"] = {}
+
+        for key in replit.db["AutoThreading"]:
+            channel = self.__bot.get_channel(key)
+            if channel is None:
+                channel = await self.__bot.fetch_channel(int(key))
+            self.__cache.add(channel, replit.db["AutoThreading"][key])
+
+        # await self.__loadChannels()
         self.__logger.info("Extension Loaded!")
 
     async def cog_unload(self) -> None:
-        await self.__dataBase.kill()
-        self.__logger.info("Extension Unloaded! Database connection closed")
+        # await self.__dataBase.kill()
+        self.__logger.info("Extension Unloaded!")
 
     async def __loadChannels(self) -> None:
         await self.__dataBase.cursor.execute("SELECT * FROM Channels")
@@ -218,9 +233,10 @@ class AutoThreading(commands.Cog):
                 await interaction.followup.send(content="test")
                 return self.__logger.warning("ATCommand.Enable took more then 3 seconds to respond!!")
             await ctModal.wait()
-            await self.__dataBase.cursor.execute("INSERT INTO Channels VALUES (?, ?)",
-                                                 [channel.id, ctModal.input.value])
-            await self.__dataBase.connection.commit()
+            replit.db["AutoThreading"][channel.id] = ctModal.input.value
+            # await self.__dataBase.cursor.execute("INSERT INTO Channels VALUES (?, ?)",
+            #                                      [channel.id, ctModal.input.value])
+            # await self.__dataBase.connection.commit()
             self.__cache.add(channel, ctModal.input.value)
             await interaction.followup.send(content=f"✅ AutoThreading Enabled on (#{channel.name})", ephemeral=True)
 
@@ -229,8 +245,9 @@ class AutoThreading(commands.Cog):
                 return await ErrorHandler.SendError(interaction, f"Channel ({channel.name}) is not AutoThreaded!!")
 
             self.__cache.remove(channel)
-            await self.__dataBase.cursor.execute("DELETE FROM Channels WHERE CHANNEL_ID = (?)", (channel.id,))
-            await self.__dataBase.connection.commit()
+            replit.db["AutoThreading"].pop(channel.id)
+            # await self.__dataBase.cursor.execute("DELETE FROM Channels WHERE CHANNEL_ID = (?)", (channel.id,))
+            # await self.__dataBase.connection.commit()
             await interaction.response.send_message(content=f"✅ AutoThreading has been disabled on this channel by the "
                                                             f"command of {interaction.user.mention}!")
         elif action == "Change Creation Text":
@@ -241,10 +258,11 @@ class AutoThreading(commands.Cog):
                                                placeholder="Example: \"this thread is created for you {user}\"", )
             await interaction.response.send_modal(ctModal)
             await ctModal.wait()
-            await self.__dataBase.cursor.execute("UPDATE Channels SET CREATION_TEXT = (?) WHERE CHANNEL_ID = (?) ",
-                                                 (ctModal.input.value, channel.id))
+            replit.db["AutoThreading"][channel.id] = ctModal.input.value
             self.__cache.get(channel).creation_text = ctModal.input.value
-            await self.__dataBase.connection.commit()
+            # await self.__dataBase.cursor.execute("UPDATE Channels SET CREATION_TEXT = (?) WHERE CHANNEL_ID = (?) ",
+            #                                      (ctModal.input.value, channel.id))
+            # await self.__dataBase.connection.commit()
             await interaction.response.send_message(content=f"✅ AutoThreading has been disabled on this channel by the "
                                                             f"command of {interaction.user.mention}!")
         elif action == "Info":

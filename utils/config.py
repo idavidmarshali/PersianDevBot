@@ -1,7 +1,7 @@
 import logging
 import os
 import json
-import pathlib
+from typing import Union
 
 from utils.logger import Logger
 
@@ -25,7 +25,7 @@ class ConfigLoader:
             return cls.__instance
         return super(cls.__class__, cls).__new__(cls)
 
-    def __init__(self, path: os.PathLike | str = None):
+    def __init__(self, path: os.PathLike | str | None = None):
         if ConfigLoader.__instance is not None and path is None:
             return
         self.__path = path

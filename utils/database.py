@@ -1,11 +1,14 @@
-import asyncio
 import os
-# import sqlite3
 import aiosqlite
 
+"""
+This utility module is made for support with SQLite databases in an asynchronous environment.
+although because the bot is going the be running in replit, all parts of the bot that reference this utility module are 
+commented out.
+"""
 
-class DatabaseHandler:
-    def __init__(self, path: os.PathLike[str] | str):
+class SqlDatabaseHandler:
+    def __init__(self, path: os.PathLike | str):
         self.__path = path
         self.__connection: aiosqlite.Connection = ...
         self.__cursor: aiosqlite.Cursor = ...
@@ -26,10 +29,3 @@ class DatabaseHandler:
     @property
     def cursor(self) -> aiosqlite.Cursor:
         return self.__cursor
-
-    def __del__(self):
-        asyncio.run(self.__connection.commit())
-        asyncio.run(self.__cursor.close())
-        asyncio.run(self.__connection.close())
-
-

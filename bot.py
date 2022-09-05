@@ -2,10 +2,14 @@ import discord
 from discord.ext import commands
 from utils.logger import Logger
 from utils.config import ConfigLoader
-from utils.database import DatabaseHandler
 
 
 class PDBot(commands.Bot):
+    """
+    the main bot class that inherits from discord.ext.command.Bot
+
+
+    """
     def __init__(self, prefix: str | list[str], intents: discord.Intents, config: ConfigLoader, extensions: list[str] = []):
 
         self.__extensions = extensions
